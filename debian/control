@@ -1,0 +1,12 @@
+Source: trojan-go
+Section: utils
+Priority: optional
+Maintainer: p4gefau1t@gmail.com
+Build-Depends: debhelper (>= 9), git, golang
+Standards-Version: 3.9.8
+Homepage: https://github.com/p4gefau1t/trojan-go
+
+Package: trojan-go
+Architecture: any
+Depends: ${shlibs:Depends},${misc:Depends}
+Description: Release version oftrojan-go.
