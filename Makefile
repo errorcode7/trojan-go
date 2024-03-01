@@ -3,6 +3,7 @@ PACKAGE_NAME := github.com/p4gefau1t/trojan-go
 VERSION := `git describe --dirty`
 COMMIT := `git rev-parse HEAD`
 
+TARGET := $(DESTDIR)$(prefix)
 PLATFORM := linux
 BUILD_DIR := build
 VAR_SETTING := -X $(PACKAGE_NAME)/constant.Version=$(VERSION) -X $(PACKAGE_NAME)/constant.Commit=$(COMMIT)
@@ -17,13 +18,13 @@ clean:
 	rm -f *.dat
 
 geoip.dat:
-	wget https://github.com/v2fly/geoip/raw/release/geoip.dat
+	wget --no-check-certificate https://github.com/v2fly/geoip/raw/release/geoip.dat
 
 geoip-only-cn-private.dat:
-	wget https://github.com/v2fly/geoip/raw/release/geoip-only-cn-private.dat
+	wget --no-check-certificate https://github.com/v2fly/geoip/raw/release/geoip-only-cn-private.dat
 
 geosite.dat:
-	wget https://github.com/v2fly/domain-list-community/raw/release/dlc.dat -O geosite.dat
+	wget --no-check-certificate https://github.com/v2fly/domain-list-community/raw/release/dlc.dat -O geosite.dat
 
 test:
 	# Disable Bloomfilter when testing
@@ -34,30 +35,29 @@ trojan-go:
 	$(GOBUILD)
 
 install: $(BUILD_DIR)/$(NAME) geoip.dat geoip-only-cn-private.dat geosite.dat
-	mkdir -p /etc/$(NAME)
-	mkdir -p /usr/share/$(NAME)
-	cp example/*.json /etc/$(NAME)
-	cp $(BUILD_DIR)/$(NAME) /usr/bin/$(NAME)
-	cp example/$(NAME).service /usr/lib/systemd/system/
-	cp example/$(NAME)@.service /usr/lib/systemd/system/
-	systemctl daemon-reload
-	cp geosite.dat /usr/share/$(NAME)/geosite.dat
-	cp geoip.dat /usr/share/$(NAME)/geoip.dat
-	cp geoip-only-cn-private.dat /usr/share/$(NAME)/geoip-only-cn-private.dat
-	ln -fs /usr/share/$(NAME)/geoip.dat /usr/bin/
-	ln -fs /usr/share/$(NAME)/geoip-only-cn-private.dat /usr/bin/
-	ln -fs /usr/share/$(NAME)/geosite.dat /usr/bin/
+	install -d $(TARGET)/etc/$(NAME) $(TARGET)/usr/lib/systemd/system/
+	install example/*.json $(TARGET)/etc/$(NAME)/
+	install -D $(BUILD_DIR)/$(NAME) $(TARGET)/usr/bin/$(NAME)
+	install -D example/$(NAME).service $(TARGET)/usr/lib/systemd/system/
+	install -D example/$(NAME)@.service $(TARGET)/usr/lib/systemd/system/
+	$(shell [[ "$LD_LIBRARY_PATH:" = *libfakeroot:* ]] || systemctl daemon-reload)
+	install -D geosite.dat $(TARGET)/usr/share/$(NAME)/geosite.dat
+	install -D geoip.dat $(TARGET)/usr/share/$(NAME)/geoip.dat
+	install -D geoip-only-cn-private.dat $(TARGET)/usr/share/$(NAME)/geoip-only-cn-private.dat
+	ln -fs $(TARGET)/usr/share/$(NAME)/geoip.dat $(TARGET)/usr/bin/
+	ln -fs $(TARGET)/usr/share/$(NAME)/geoip-only-cn-private.dat $(TARGET)/usr/bin/
+	ln -fs $(TARGET)/usr/share/$(NAME)/geosite.dat $(TARGET)/usr/bin/
 
 uninstall:
-	rm /usr/lib/systemd/system/$(NAME).service
-	rm /usr/lib/systemd/system/$(NAME)@.service
-	systemctl daemon-reload
-	rm /usr/bin/$(NAME)
-	rm -rd /etc/$(NAME)
-	rm -rd /usr/share/$(NAME)
-	rm /usr/bin/geoip.dat
-	rm /usr/bin/geoip-only-cn-private.dat
-	rm /usr/bin/geosite.dat
+	rm $(TARGET)/usr/lib/systemd/system/$(NAME).service
+	rm $(TARGET)/usr/lib/systemd/system/$(NAME)@.service
+	$(shell [[ "$LD_LIBRARY_PATH:" = *libfakeroot:* ]] || systemctl daemon-reload)
+	rm $(TARGET)/usr/bin/$(NAME)
+	rm -rd $(TARGET)/etc/$(NAME)
+	rm -rd $(TARGET)/usr/share/$(NAME)
+	rm $(TARGET)/usr/bin/geoip.dat
+	rm $(TARGET)/usr/bin/geoip-only-cn-private.dat
+	rm $(TARGET)/usr/bin/geosite.dat
 
 %.zip: % geosite.dat geoip.dat geoip-only-cn-private.dat
 	@zip -du $(NAME)-$@ -j $(BUILD_DIR)/$</*

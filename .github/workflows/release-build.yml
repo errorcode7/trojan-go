@@ -23,7 +23,14 @@ jobs:
           git checkout $tag_name
           echo "TAG_NAME=${tag_name}" >> $GITHUB_ENV
 
-      - name: Build
+      - name: Debian build
+        uses: jtdor/build-deb-action@v1
+        env:
+          DEB_BUILD_OPTIONS: noautodbgsym
+        with:
+          buildpackage-opts: --build=binary --no-sign
+
+      - name: Build      
         run: |
           make release -j$(nproc)
 
@@ -32,6 +39,6 @@ jobs:
         with:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
           tag: ${{ env.TAG_NAME }}
-          file: ./trojan-go-*.zip
+          file: ./trojan-go*.{zip,deb}
           file_glob: true
           prerelease: true
