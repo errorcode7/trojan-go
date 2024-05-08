@@ -2,7 +2,7 @@ Source: trojan-go
 Section: utils
 Priority: optional
 Maintainer: p4gefau1t@gmail.com
-Build-Depends: debhelper (>= 9), git, golang
+Build-Depends: debhelper (>= 9), git, golang ,dh-make
 Standards-Version: 3.9.8
 Homepage: https://github.com/p4gefau1t/trojan-go
 
